@@ -1,0 +1,82 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using NUnit.Framework;
+
+namespace Glitchr.Hub.Tests
+{
+    /// <summary>What the window writes: a project's manifest, the user's Package Manager configuration - and the JSON it reads.</summary>
+    public class HubTests
+    {
+        private string directory;
+
+        [SetUp]
+        public void SetUp()
+        {
+            directory = Path.Combine(Path.GetTempPath(), "glitchr-hub-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Environment.SetEnvironmentVariable("UPM_USER_CONFIG_FILE", null);
+            Directory.Delete(directory, true);
+        }
+
+        [Test]
+        public void JsonReadsAndWritesARegistrysDocument()
+        {
+            object doc = Json.Parse("{\"name\":\"com.glitchr.licensing\",\"dist-tags\":{\"latest\":\"1.0.1\"},\"versions\":{\"1.0.0\":{},\"1.0.1\":{\"unity\":\"2021.3\",\"keywords\":[\"a\",\"b\"],\"n\":1.5,\"ok\":true,\"no\":null,\"text\":\"quote \\\" and \\u00e9\"}}}");
+            Assert.AreEqual("1.0.1", Json.Get(doc, "dist-tags", "latest"));
+            Assert.AreEqual("2021.3", Json.Get(doc, "versions", "1.0.1", "unity"));
+            Assert.AreEqual(1.5, Json.Get(doc, "versions", "1.0.1", "n"));
+            Assert.AreEqual(true, Json.Get(doc, "versions", "1.0.1", "ok"));
+            Assert.AreEqual("quote \" and é", Json.Get(doc, "versions", "1.0.1", "text"));
+            Assert.AreEqual(Json.Write(doc), Json.Write(Json.Parse(Json.Write(doc, true))), "written and read back, the same");
+            Assert.Throws<FormatException>(() => Json.Parse("{\"a\":"));
+        }
+
+        [Test]
+        public void TheManifestGetsTheScopedRegistryOnceAndTheDependency()
+        {
+            string path = Path.Combine(directory, "manifest.json");
+            File.WriteAllText(path, "{\n  \"dependencies\": {\n    \"com.unity.ugui\": \"2.0.0\"\n  }\n}\n");
+
+            var manifest = new ProjectManifest(path);
+            Assert.IsTrue(manifest.AddScopedRegistry("Glitch Art", "https://glitchr.io/upm/", new[] { "com.glitchr" }));
+            manifest.SetDependency("com.glitchr.licensing", "1.0.1");
+            manifest.Save();
+
+            var again = new ProjectManifest(path);
+            Assert.IsFalse(again.AddScopedRegistry("Glitch Art", "https://glitchr.io/upm", new[] { "com.glitchr" }), "already there");
+            Assert.IsTrue(again.AddScopedRegistry("Other name", "https://glitchr.io/upm", new[] { "com.glitchr", "com.other" }), "its scopes completed");
+            again.Save();
+
+            object json = Json.Parse(File.ReadAllText(path));
+            var registries = Json.Array(Json.Get(json, "scopedRegistries"));
+            Assert.AreEqual(1, registries.Count);
+            Assert.AreEqual("https://glitchr.io/upm", Json.Get(registries[0], "url"));
+            CollectionAssert.AreEqual(new object[] { "com.glitchr", "com.other" }, Json.Array(Json.Get(registries[0], "scopes")));
+            Assert.AreEqual("1.0.1", Json.Get(json, "dependencies", "com.glitchr.licensing"));
+            Assert.AreEqual("2.0.0", Json.Get(json, "dependencies", "com.unity.ugui"), "the others kept");
+        }
+
+        [Test]
+        public void TheKeyGoesToTheUsersConfigurationOnceForItsRegistry()
+        {
+            string path = Path.Combine(directory, ".upmconfig.toml");
+            File.WriteAllText(path, "[npmAuth.\"https://other.example/npm\"]\ntoken = \"other\"\nalwaysAuth = true\n");
+            Environment.SetEnvironmentVariable("UPM_USER_CONFIG_FILE", path);
+
+            Assert.IsNull(UpmConfig.Token("https://glitchr.io/upm"));
+            UpmConfig.SetToken("https://glitchr.io/upm/", "glk_FIRST");
+            Assert.AreEqual("glk_FIRST", UpmConfig.Token("https://glitchr.io/upm"));
+            UpmConfig.SetToken("https://glitchr.io/upm", "glk_SECOND");
+            Assert.AreEqual("glk_SECOND", UpmConfig.Token("https://glitchr.io/upm"), "replaced, not added");
+            Assert.AreEqual("other", UpmConfig.Token("https://other.example/npm"), "the other registry kept");
+            string text = File.ReadAllText(path);
+            Assert.AreEqual(1, text.Split(new[] { "[npmAuth.\"https://glitchr.io/upm\"]" }, StringSplitOptions.None).Length - 1);
+        }
+    }
+}
