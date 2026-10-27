@@ -1,0 +1,33 @@
+# Copy into a package's repository as .github/workflows/package-release.yml: on each published
+# release, the package is packed as npm and Unity expect (npm pack: every file under package/),
+# the tarball attached to the release, and the hub told to publish again.
+name: Package release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Pack and attach the tarball
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tarball=$(npm pack --silent)
+          gh release upload "${{ github.event.release.tag_name }}" "$tarball" --clobber
+      - name: Tell the hub
+        if: ${{ vars.HUB_REPOSITORY != '' }}
+        env:
+          HUB_TOKEN: ${{ secrets.HUB_TOKEN }}
+        run: |
+          curl -fsS -X POST -H "Authorization: Bearer $HUB_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ vars.HUB_REPOSITORY }}/dispatches" -d '{"event_type":"package-released"}'
