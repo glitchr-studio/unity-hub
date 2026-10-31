@@ -32,14 +32,14 @@ From Glitch Art's registry, in `Packages/manifest.json`:
 
 ```json
 "scopedRegistries": [
-  {"name": "Glitch Art", "url": "https://glitchr.io/upm", "scopes": ["com.glitchr"]}
+  {"name": "Glitch Art", "url": "https://glitchr.io/upm", "scopes": ["io.glitchr"]}
 ],
 "dependencies": {
-  "com.glitchr.hub": "1.0.0"
+  "io.glitchr.hub": "1.0.0"
 }
 ```
 
-Or from Git: `"com.glitchr.hub": "https://github.com/glitchr-studio/unity-hub.git#1.0.0"`.
+Or from Git: `"io.glitchr.hub": "https://github.com/glitchr-studio/unity-hub.git#1.0.0"`.
 
 See [docs/sources.md](docs/sources.md) for the hub manifest and the kinds of
 source, [docs/buying.md](docs/buying.md) for the device flow.

@@ -27,7 +27,7 @@ namespace Glitchr.Hub.Tests
         [Test]
         public void JsonReadsAndWritesARegistrysDocument()
         {
-            object doc = Json.Parse("{\"name\":\"com.glitchr.licensing\",\"dist-tags\":{\"latest\":\"1.0.1\"},\"versions\":{\"1.0.0\":{},\"1.0.1\":{\"unity\":\"2021.3\",\"keywords\":[\"a\",\"b\"],\"n\":1.5,\"ok\":true,\"no\":null,\"text\":\"quote \\\" and \\u00e9\"}}}");
+            object doc = Json.Parse("{\"name\":\"io.glitchr.licensing\",\"dist-tags\":{\"latest\":\"1.0.1\"},\"versions\":{\"1.0.0\":{},\"1.0.1\":{\"unity\":\"2021.3\",\"keywords\":[\"a\",\"b\"],\"n\":1.5,\"ok\":true,\"no\":null,\"text\":\"quote \\\" and \\u00e9\"}}}");
             Assert.AreEqual("1.0.1", Json.Get(doc, "dist-tags", "latest"));
             Assert.AreEqual("2021.3", Json.Get(doc, "versions", "1.0.1", "unity"));
             Assert.AreEqual(1.5, Json.Get(doc, "versions", "1.0.1", "n"));
@@ -44,21 +44,21 @@ namespace Glitchr.Hub.Tests
             File.WriteAllText(path, "{\n  \"dependencies\": {\n    \"com.unity.ugui\": \"2.0.0\"\n  }\n}\n");
 
             var manifest = new ProjectManifest(path);
-            Assert.IsTrue(manifest.AddScopedRegistry("Glitch Art", "https://glitchr.io/upm/", new[] { "com.glitchr" }));
-            manifest.SetDependency("com.glitchr.licensing", "1.0.1");
+            Assert.IsTrue(manifest.AddScopedRegistry("Glitch Art", "https://glitchr.io/upm/", new[] { "io.glitchr" }));
+            manifest.SetDependency("io.glitchr.licensing", "1.0.1");
             manifest.Save();
 
             var again = new ProjectManifest(path);
-            Assert.IsFalse(again.AddScopedRegistry("Glitch Art", "https://glitchr.io/upm", new[] { "com.glitchr" }), "already there");
-            Assert.IsTrue(again.AddScopedRegistry("Other name", "https://glitchr.io/upm", new[] { "com.glitchr", "com.other" }), "its scopes completed");
+            Assert.IsFalse(again.AddScopedRegistry("Glitch Art", "https://glitchr.io/upm", new[] { "io.glitchr" }), "already there");
+            Assert.IsTrue(again.AddScopedRegistry("Other name", "https://glitchr.io/upm", new[] { "io.glitchr", "com.other" }), "its scopes completed");
             again.Save();
 
             object json = Json.Parse(File.ReadAllText(path));
             var registries = Json.Array(Json.Get(json, "scopedRegistries"));
             Assert.AreEqual(1, registries.Count);
             Assert.AreEqual("https://glitchr.io/upm", Json.Get(registries[0], "url"));
-            CollectionAssert.AreEqual(new object[] { "com.glitchr", "com.other" }, Json.Array(Json.Get(registries[0], "scopes")));
-            Assert.AreEqual("1.0.1", Json.Get(json, "dependencies", "com.glitchr.licensing"));
+            CollectionAssert.AreEqual(new object[] { "io.glitchr", "com.other" }, Json.Array(Json.Get(registries[0], "scopes")));
+            Assert.AreEqual("1.0.1", Json.Get(json, "dependencies", "io.glitchr.licensing"));
             Assert.AreEqual("2.0.0", Json.Get(json, "dependencies", "com.unity.ugui"), "the others kept");
         }
 

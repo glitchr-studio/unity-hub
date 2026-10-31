@@ -1,5 +1,5 @@
 {
-  "name": "com.glitchr.hub",
+  "name": "io.glitchr.hub",
   "version": "1.0.0",
   "displayName": "Glitch Art Hub",
   "description": "A window of the Unity editor that browses package hubs - a forge, a static hub on GitHub Pages, any UPM registry, Git packages - and installs, updates and removes their packages in the open project in one click. A hub that sells is bought from in the browser; the key it brings is kept in the user's .upmconfig.toml.",

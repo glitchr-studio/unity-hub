@@ -15,7 +15,7 @@ A JSON document that names a hub and its sources - what a forge serves at
   "logo": "https://glitchr.io/assets/images/brand/monkey.png",
   "color": "#fc6875",
   "sources": [
-    {"name": "Glitch Art", "type": "upm", "url": "https://glitchr.io/upm", "scopes": ["com.glitchr"], "catalog": "https://glitchr.io/upm/-/hub/catalog.json"},
+    {"name": "Glitch Art", "type": "upm", "url": "https://glitchr.io/upm", "scopes": ["io.glitchr"], "catalog": "https://glitchr.io/upm/-/hub/catalog.json"},
     {"name": "A tool", "type": "git", "url": "https://github.com/someone/some-tool.git"}
   ],
   "games": "https://glitchr.io/upm/-/hub/catalog.json",
